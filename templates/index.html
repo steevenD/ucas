@@ -1,0 +1,21 @@
+
+<html>
+<head>
+    <title>Hello</title>
+</head>
+<body>
+    <div id="products">
+    </div>
+        <script>
+            var products = {{ products | safe }};
+            products.products.forEach(product => {
+                var newNode = document.createElement('div');
+                newNode.classList.add("product");
+                newNode.innerHTML = product.nom + " - " + product.photo + " - " + product.score;
+                document.getElementById("products").appendChild(newNode);
+                var newLine = document.createElement('br');
+                document.getElementById("products").appendChild(newLine);
+            })
+        </script>
+</body>
+</html>
