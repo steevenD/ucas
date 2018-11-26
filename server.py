@@ -3,7 +3,7 @@ from bs4 import BeautifulSoup
 from flask import Flask, render_template
 import requests
 import json
-
+from jsonHelper import addToFile
 
 
 app = Flask(__name__)
@@ -11,10 +11,10 @@ app = Flask(__name__)
 parent_url = "https://fr.openfoodfacts.org/"
 
 class Product:
-  def __init__(self, nom, photo, score):
-    self.nom = nom
-    self.photo = photo
-    self.score = score
+    def __init__(self, nom, photo, score):
+        self.nom = nom
+        self.photo = photo
+        self.score = score
 
 def calcul_nova_score(product):
     nova = product.find_all("a", {"href": "/nova"})
@@ -67,7 +67,7 @@ def calcul_score(product):
     #print("nutri score : ", nutri_score)
     score = None
     if nutri_score is not None and nova_score is not None:
-        score = ((0.6 * int(nutri_score)/5) + (0.3 * int(nova_score)/4) + (0.1 * int(bio)))*100
+        score = round(((0.6 * int(nutri_score)/5) + (0.3 * int(nova_score)/4) + (0.1 * int(bio)))*100 , 2)
         #print("SCOOOOOOOOOOOORE : ", score)
     return score
 
@@ -93,8 +93,7 @@ def get_all_product():
     url = parent_url
     next_page = True
     page_suivante = ''
-    productsList = list()
-    productsJson = '{ "products": ['
+    productsJson = []
     while next_page:
         r = requests.get(url + page_suivante)
         html = r.content
@@ -105,17 +104,13 @@ def get_all_product():
         for product in products:
             product_result = get_product(product)
             if product_result is not None:
-                productsList.append(product_result)
+                result = {"nom":product_result.nom, "photo":product_result.photo, "score": product_result.score}
+                productsJson.append(result)
+                addToFile("résultat", result)
                 #print(product_result.nom, " - ", product_result.photo, " - ", product_result.score)
-        if page_suivante is None or page_suivante == "/3":
+        if page_suivante is None or page_suivante == "/60":
             next_page = False
-    for product in productsList:
-        productsJson = productsJson + '{"nom": "' + product.nom + '", "photo": "' + product.photo + '", "score": "' + str(product.score) + '"},'
-
-    productsJson = productsJson[:-1] + ']}'
-    n = json.dumps(productsJson)
-    o = json.loads(n)
-    return o
+    return productsJson
 
 
 @app.route('/')
@@ -124,8 +119,5 @@ def home():
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=4000)
-
-
-
+    app.run(host='0.0.0.0', port=5000)
 
